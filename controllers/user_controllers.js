@@ -5,6 +5,13 @@ import jwt from "jsonwebtoken";
 
 export const createUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
+  if (!name || !email || !password) {
+    res.status(400);
+    res.json({
+      message: "All fields are required",
+    });
+    throw new Error("All fields are required");
+  }
   const user = await UserModel.findOne({ email });
   if (user) {
     res.status(400);
@@ -48,4 +55,43 @@ export const createUser = asyncHandler(async (req, res) => {
     });
     throw new Error("Invalid user data");
   }
+});
+
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400);
+    res.json({
+      message: "All fields are required",
+    });
+    throw new Error("All fields are required");
+  }
+  const user = await UserModel.findOne({ email }).select("+password");
+  if (!user) {
+    res.status(400);
+    res.json({
+      message: "User not found",
+    });
+    throw new Error("User not found");
+  }
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    res.status(400);
+    res.json({
+      message: "Invalid credentials",
+    });
+    throw new Error("Invalid credentials");
+  }
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
+  res.status(200).json({
+    message: "Login Successfully!",
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+    },
+    token,
+  });
 });
