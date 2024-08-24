@@ -2,6 +2,7 @@ import { asyncHandler } from "../middlewares/error_handler.js";
 import { UserModel } from "../models/user_model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import cloudinary from "cloudinary";
 
 export const createUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -26,7 +27,9 @@ export const createUser = asyncHandler(async (req, res) => {
 
   const profilePic = {
     public_id: "hashir",
-    url: "hashir",
+  };
+  const bannerPic = {
+    public_id: "hashir",
   };
 
   const newUser = await UserModel.create({
@@ -34,6 +37,8 @@ export const createUser = asyncHandler(async (req, res) => {
     email,
     password: hashedPassword,
     profilePic,
+    bannerPic,
+    bio: "kuch bhi",
   });
 
   if (newUser) {
@@ -43,10 +48,7 @@ export const createUser = asyncHandler(async (req, res) => {
     await newUser.save();
 
     res.status(201).json({
-      _id: newUser._id,
-      name: newUser.name,
       email: newUser.email,
-      token: token,
     });
   } else {
     res.status(400);
@@ -67,6 +69,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     throw new Error("All fields are required");
   }
   const user = await UserModel.findOne({ email }).select("+password");
+
   if (!user) {
     res.status(400);
     res.json({
@@ -85,13 +88,124 @@ export const loginUser = asyncHandler(async (req, res) => {
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
+  const userWithoutPassword = user.toObject();
+  delete userWithoutPassword.password;
+
   res.status(200).json({
     message: "Login Successfully!",
-    user: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-    },
+    user: userWithoutPassword,
     token,
   });
 });
+
+export const updateUser = asyncHandler(async (req, res) => {
+  const { userFromClient, id } = req.body;
+
+  if (!id) {
+    res.status(400);
+    res.json({
+      message: "user is not found",
+    });
+    throw new Error("user is not found");
+  }
+  if (
+    userFromClient.isDeletedProfilePic &&
+    userFromClient.profilePic.public_id
+  ) {
+    const res = await cloudinary.v2.uploader.destroy(
+      userFromClient.profilePic.public_id
+    );
+  }
+  if (userFromClient.isDeletedBannerPic && userFromClient.bannerPic.public_id) {
+    const res = await cloudinary.v2.uploader.destroy(
+      userFromClient.bannerPic.public_id
+    );
+  }
+  if (userFromClient.imageFromGallery) {
+    const result = await cloudinary.v2.uploader.upload(
+      userFromClient.imageFromGallery,
+      {
+        folder: "profile_pics",
+        width: 100,
+      }
+    );
+    userFromClient.profilePic = {
+      public_id: result.public_id,
+      url: result.secure_url,
+    };
+  }
+  if (userFromClient.bannerImageFromGallery) {
+    const result = await cloudinary.v2.uploader.upload(
+      userFromClient.bannerImageFromGallery,
+      {
+        folder: "banner_pics",
+      }
+    );
+    userFromClient.bannerPic = {
+      public_id: result.public_id,
+      url: result.secure_url,
+    };
+  }
+  const user = await UserModel.findByIdAndUpdate(id, userFromClient, {
+    new: true,
+    runValidators: true,
+  });
+  await user.save();
+  if (user) {
+    res.status(200).json({
+      message: "User updated successfully",
+      user,
+    });
+  } else {
+    res.status(400);
+    res.json({
+      message: "Invalid user data",
+    });
+    throw new Error("Invalid user data");
+  }
+});
+
+// export const uploadProfilePic = asyncHandler(async (req, res) => {
+//   const { image } = req.body;
+
+//   let imagePrefix = `data:image/jpeg;base64,${image}`;
+//   try {
+//     const result = await cloudinary.v2.uploader.upload(imagePrefix, {
+//       folder: "profile_pics",
+//       width: 150,
+//       crop: "scale",
+//     });
+
+//     res.status(200).json({
+//       message: "Profile picture uploaded successfully",
+//       image: {
+//         public_id: result.public_id,
+//         url: result.secure_url,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error uploading image:", error);
+//     res.status(500).json({
+//       message: "Failed to upload profile picture",
+//       error: error.message,
+//     });
+//   }
+// });
+
+export const getProfile = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = await UserModel.findById(id);
+  if (!user) {
+    res.status(404).json({
+      message: "User not found",
+    });
+  }
+  res.status(200).json({
+    user,
+  });
+});
+
+const deleteImages = async (public_ids) => {
+  const result = await cloudinary.v2.uploader.destroy(public_ids);
+  return result;
+};

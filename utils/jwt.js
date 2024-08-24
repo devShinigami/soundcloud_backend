@@ -18,11 +18,7 @@ export const isAuthenticated = asyncHandler(async (req, res, next) => {
     const user = await UserModel.findById({ _id });
     res.json({
       success: true,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user,
     });
   } catch (err) {
     return res.status(401).send({

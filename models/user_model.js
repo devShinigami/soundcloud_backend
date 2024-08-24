@@ -36,6 +36,8 @@ const userSchema = new mongoose.Schema({
       required: true,
     },
     url: {
+      default:
+        "https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg",
       type: String,
       required: true,
     },
@@ -46,6 +48,8 @@ const userSchema = new mongoose.Schema({
     },
     url: {
       type: String,
+      default:
+        "https://th.bing.com/th/id/OIP.y1Q09f7NYYvYaZcOWWExygHaEK?rs=1&pid=ImgDetMain",
     },
   },
   bio: {

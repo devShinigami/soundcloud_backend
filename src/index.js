@@ -6,10 +6,10 @@ import userRouter from "../routes/user_route.js";
 import { v2 as cloudinary } from "cloudinary";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "100mb" }));
 app.use(
   bodyParser.urlencoded({
-    limit: "10000kb",
+    limit: "100mb",
     extended: true,
     parameterLimit: 50000,
   })
