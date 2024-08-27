@@ -10,17 +10,24 @@ const trackSchema = new mongoose.Schema({
     ref: "users",
     required: true,
   },
-  artist: {
-    type: String,
-    required: true,
+
+  timesOfPlayed: {
+    type: Number,
+    default: 0,
   },
+
   album: {
     type: String,
-    required: true,
   },
-  url: {
-    type: String,
-    required: true,
+  trackData: {
+    public_id: {
+      type: String,
+      required: true,
+    },
+    url: {
+      type: String,
+      required: true,
+    },
   },
   duration: {
     type: Number,
@@ -28,11 +35,25 @@ const trackSchema = new mongoose.Schema({
   },
   genre: {
     type: String,
+    default: "Unknown",
     required: true,
   },
   isPrivate: {
     required: true,
     type: Boolean,
+  },
+  description: {
+    type: String,
+  },
+  trackImage: {
+    public_id: {
+      type: String,
+      required: true,
+    },
+    url: {
+      type: String,
+      required: true,
+    },
   },
   createdAt: {
     type: Date,

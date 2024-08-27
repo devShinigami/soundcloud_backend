@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import { dataConnection } from "../database/database.js";
 import userRouter from "../routes/user_route.js";
 import { v2 as cloudinary } from "cloudinary";
+import { trackRouter } from "../routes/track_route.js";
 
 const app = express();
 app.use(express.json({ limit: "100mb" }));
@@ -17,6 +18,7 @@ app.use(
 configDotenv();
 
 app.use("/api/v1", userRouter);
+app.use("/api/v1/track", trackRouter);
 
 dataConnection();
 
