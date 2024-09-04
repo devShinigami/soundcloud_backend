@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import autopopulate from "mongoose-autopopulate";
 
 const trackSchema = new mongoose.Schema({
   title: {
@@ -9,13 +10,25 @@ const trackSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "users",
     required: true,
+    autopopulate: {
+      select: "name profilePic city country",
+    },
   },
 
   timesOfPlayed: {
     type: Number,
     default: 0,
   },
-
+  duration: {
+    inSeconds: {
+      type: Number,
+      required: true,
+    },
+    inMinutes: {
+      type: Number,
+      required: true,
+    },
+  },
   album: {
     type: String,
   },
@@ -29,14 +42,9 @@ const trackSchema = new mongoose.Schema({
       required: true,
     },
   },
-  duration: {
-    type: Number,
-    required: true,
-  },
   genre: {
     type: String,
     default: "Unknown",
-    required: true,
   },
   isPrivate: {
     required: true,
@@ -60,5 +68,7 @@ const trackSchema = new mongoose.Schema({
     default: Date.now(),
   },
 });
+
+trackSchema.plugin(autopopulate);
 
 export const TrackModel = mongoose.model("tracks", trackSchema);

@@ -18,25 +18,36 @@ export const getTrack = async (req, res) => {
 
 export const uploadTrack = asyncHandler(async (req, res) => {
   const filePath = req.file.path;
+
+  const trackObject = await JSON.parse(req.body.track);
   const {
     title,
     genre,
-    trackData,
-    duration,
     isPrivate,
+    description,
     trackImageFromGallery,
-  } = req.body.track;
+    duration,
+  } = trackObject.track;
+  const { userId } = req.body;
+
+  if (!title || !duration || !userId || !filePath) {
+    res.status(400).json({
+      message: "incomplete data",
+    });
+  }
   const result = await cloudinary.v2.uploader.upload(filePath, {
     resource_type: "video",
     folder: "tracks",
   });
-  const { userId } = req.body;
-  const trackImage = {
+  let trackImage = {
     public_id: "",
     url: "",
   };
-  trackData.publicId = result.public_id;
-  trackData.url = result.secure_url;
+
+  const trackData = {
+    public_id: result.public_id,
+    url: result.secure_url,
+  };
 
   const user = await UserModel.findById(userId);
 
@@ -63,21 +74,26 @@ export const uploadTrack = asyncHandler(async (req, res) => {
     };
   }
 
-  const track = await TrackModel.create({
-    user: user._id,
+  const trackToBeCreated = {
+    user: userId,
     title,
     genre,
-    duration,
-    isPrivate,
-    trackData: {
-      public_id: trackData.publicId,
-      url: trackData.url,
+    description,
+    trackImage,
+    duration: {
+      inMinutes: duration.inMinutes,
+      inSeconds: duration.inSeconds,
     },
-  });
+    isPrivate,
+    trackData,
+  };
+
+  const track = await TrackModel.create(trackToBeCreated);
   user.tracks.push(track._id);
   await track.save();
   await user.save();
-  res.status(201).json({
+  res.status(200).json({
     message: "Track uploaded successfully",
+    track,
   });
 });

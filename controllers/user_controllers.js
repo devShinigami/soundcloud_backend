@@ -68,7 +68,9 @@ export const loginUser = asyncHandler(async (req, res) => {
     });
     throw new Error("All fields are required");
   }
-  const user = await UserModel.findOne({ email }).select("+password");
+  const user = await UserModel.findOne({ email })
+    .select("+password")
+    .populate("tracks");
 
   if (!user) {
     res.status(400);
@@ -165,36 +167,11 @@ export const updateUser = asyncHandler(async (req, res) => {
   }
 });
 
-// export const uploadProfilePic = asyncHandler(async (req, res) => {
-//   const { image } = req.body;
-
-//   let imagePrefix = `data:image/jpeg;base64,${image}`;
-//   try {
-//     const result = await cloudinary.v2.uploader.upload(imagePrefix, {
-//       folder: "profile_pics",
-//       width: 150,
-//       crop: "scale",
-//     });
-
-//     res.status(200).json({
-//       message: "Profile picture uploaded successfully",
-//       image: {
-//         public_id: result.public_id,
-//         url: result.secure_url,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error uploading image:", error);
-//     res.status(500).json({
-//       message: "Failed to upload profile picture",
-//       error: error.message,
-//     });
-//   }
-// });
-
 export const getProfile = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const user = await UserModel.findById(id);
+  console.log(id);
+  const user = await UserModel.findById(id).populate("tracks");
+  console.log(user);
   if (!user) {
     res.status(404).json({
       message: "User not found",
@@ -204,8 +181,3 @@ export const getProfile = asyncHandler(async (req, res) => {
     user,
   });
 });
-
-const deleteImages = async (public_ids) => {
-  const result = await cloudinary.v2.uploader.destroy(public_ids);
-  return result;
-};
